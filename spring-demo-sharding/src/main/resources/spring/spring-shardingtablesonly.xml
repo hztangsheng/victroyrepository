@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context" 
+    xmlns:tx="http://www.springframework.org/schema/tx" 
+    xmlns:sharding="http://shardingsphere.io/schema/shardingsphere/sharding"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd 
+                        http://www.springframework.org/schema/tx 
+                        http://www.springframework.org/schema/tx/spring-tx.xsd
+                        http://www.springframework.org/schema/context 
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://shardingsphere.io/schema/shardingsphere/sharding 
+                        http://shardingsphere.io/schema/shardingsphere/sharding/sharding.xsd">
+    <context:component-scan base-package="io.shardingsphere.example.spring.namespace.mybatis" />
+    
+    <bean id="demo_ds" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://132.232.33.165:3306/demo_ds_master"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
+    </bean>
+    
+    <bean id="preciseModuloTableShardingAlgorithm" class="com.victory.sharding.algorithm.PreciseShardingAlgorithmImpl" />
+    <!-- 定义分表策略1（user_id）进行分表 -->
+    <sharding:standard-strategy id="orderTableShardingStrategy" sharding-column="user_id" precise-algorithm-ref="preciseModuloTableShardingAlgorithm" />
+     <!-- 定义分表策略1（user_id）进行分表 -->
+    <sharding:standard-strategy id="orderItemTableShardingStrategy" sharding-column="user_id" precise-algorithm-ref="preciseModuloTableShardingAlgorithm" />
+    
+    <sharding:data-source id="dataSource">
+        <sharding:sharding-rule data-source-names="demo_ds">
+            <sharding:table-rules>
+                <!-- 指定逻辑表 t_order 采用 orderTableShardingStrategy方式分表-->
+                <sharding:table-rule logic-table="t_order" actual-data-nodes="demo_ds.t_order_$->{0..1}" table-strategy-ref="orderTableShardingStrategy" generate-key-column-name="order_id" />
+                <!-- 指定逻辑表 t_order_item 采用 orderTableShardingStrategy方式分表-->
+                <sharding:table-rule logic-table="t_order_item" actual-data-nodes="demo_ds.t_order_item_$->{0..1}" table-strategy-ref="orderItemTableShardingStrategy" generate-key-column-name="order_item_id" />
+            </sharding:table-rules>
+            <sharding:binding-table-rules>
+                <sharding:binding-table-rule logic-tables="t_order, t_order_item"/>
+            </sharding:binding-table-rules>
+        </sharding:sharding-rule>
+    </sharding:data-source>
+    
+   
+</beans>

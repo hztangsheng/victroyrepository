@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context" 
+    xmlns:tx="http://www.springframework.org/schema/tx" 
+    xmlns:sharding="http://shardingsphere.io/schema/shardingsphere/sharding"
+    xmlns:master-slave="http://shardingsphere.io/schema/shardingsphere/masterslave"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd 
+                        http://www.springframework.org/schema/context 
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://shardingsphere.io/schema/shardingsphere/sharding 
+                        http://shardingsphere.io/schema/shardingsphere/sharding/sharding.xsd
+                        http://shardingsphere.io/schema/shardingsphere/masterslave  
+                        http://shardingsphere.io/schema/shardingsphere/masterslave/master-slave.xsd">
+
+	<bean id="demo_ds_master" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url"
+			value="jdbc:mysql://132.232.33.165:3306/demo_ds_master" />
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+	</bean>
+
+	<bean id="demo_ds_slave_0" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url"
+			value="jdbc:mysql://132.232.33.165:3306/demo_ds_slave_0" />
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+	</bean>
+
+	<bean id="demo_ds_slave_1" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url"
+			value="jdbc:mysql://132.232.33.165:3306/demo_ds_slave_1" />
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+	</bean>
+	
+	
+	
+	<!-- 同表不同库  -->
+
+     <!-- 具体 精确分片算法引用，用于=和IN  -->
+     <bean id="preciseModuloDatabaseShardingAlgorithm" class="com.victory.sharding.algorithm.PreciseShardingAlgorithmImpl" />
+    <!-- 分库 同表 策略 根据 user_id 列 进行辨别采用哪个数据库，进行插入操作  （表是相同表） -->
+    <sharding:standard-strategy id="databaseShardingStrategy" sharding-column="user_id" precise-algorithm-ref="preciseModuloDatabaseShardingAlgorithm" />
+    
+    <sharding:data-source id="dataSource">
+        <sharding:sharding-rule data-source-names="demo_ds_slave_0,demo_ds_slave_1">
+            <sharding:table-rules>
+                <!-- 配置 t_order 和 t_order_item 表，采用上述策略-->
+                <sharding:table-rule logic-table="t_order" database-strategy-ref="databaseShardingStrategy" generate-key-column-name="order_id" />
+                <sharding:table-rule logic-table="t_order_item" database-strategy-ref="databaseShardingStrategy" generate-key-column-name="order_item_id" />
+            </sharding:table-rules>
+        </sharding:sharding-rule>
+        <sharding:props>
+           <prop key="sql.show">true</prop>
+        </sharding:props>
+    </sharding:data-source>
+    
+	
+	
+		
+</beans>

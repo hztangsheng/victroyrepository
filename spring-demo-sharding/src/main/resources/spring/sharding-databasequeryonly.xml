@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:master-slave="http://shardingsphere.io/schema/shardingsphere/masterslave"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                        http://www.springframework.org/schema/beans/spring-beans.xsd 
+                        http://www.springframework.org/schema/context 
+                        http://www.springframework.org/schema/context/spring-context.xsd
+                        http://www.springframework.org/schema/tx 
+                        http://www.springframework.org/schema/tx/spring-tx.xsd
+                        http://shardingsphere.io/schema/shardingsphere/masterslave  
+                        http://shardingsphere.io/schema/shardingsphere/masterslave/master-slave.xsd">
+
+	<bean id="demo_ds_master" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url"
+			value="jdbc:mysql://132.232.33.165:3306/demo_ds_master" />
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+	</bean>
+
+	<bean id="demo_ds_slave_0" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url"
+			value="jdbc:mysql://132.232.33.165:3306/demo_ds_slave_0" />
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+	</bean>
+
+	<bean id="demo_ds_slave_1" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url"
+			value="jdbc:mysql://132.232.33.165:3306/demo_ds_slave_1" />
+		<property name="username" value="root" />
+		<property name="password" value="123456" />
+	</bean>
+
+    <!-- 读取数据时，采用哪个数据库的策略（从库负载均衡算法引用） -->
+	<bean id="randomStrategy" class="com.victory.sharding.algorithm.MasterSlaveLoadBalanceAlgorithmImpl" />
+	
+	<!-- 读写分离时，指定从哪个库中去读取数据 ，未配置写的方式时，默认是从 master-data-source-name 对应的库中写入-->
+	<master-slave:data-source id="dataSource"
+		master-data-source-name="demo_ds_master" slave-data-source-names="demo_ds_slave_0, demo_ds_slave_1" strategy-ref="randomStrategy" >
+		<master-slave:config-map>
+		  <entry key="sql.show" value="true"/>
+		</master-slave:config-map>
+	</master-slave:data-source>
+		
+</beans>
